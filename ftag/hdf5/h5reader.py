@@ -65,7 +65,7 @@ class H5SingleReader:
             raise ValueError("H5SingleReader should only read a single file")
         self.fname = fname[0]
         
-        for protocol in supportedProtocols: 
+        for protocol in self.supportedProtocols: 
             if self.fname.startswith(protocol): 
                 # File is stored on a remote server 
                 self.isRemoteFile = True 
@@ -339,7 +339,7 @@ class H5Reader:
     def __post_init__(self) -> None:
         self.rng = np.random.default_rng(42)
         
-        print(type(fname))
+        print(type(self.fname))
         
         if isinstance(self.fname, str | Path):
             self.fname = [self.fname]
