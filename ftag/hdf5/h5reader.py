@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
+import fsspec
 import h5py
 import numpy as np
 
@@ -53,7 +54,9 @@ class H5SingleReader:
     groups: list[str] | None = None
     # dsets hold data and all have a first dimension of njets
     dsets: list[str] | None = None
-
+    supportedProtocols = ["root://", "davs://"]
+    isRemoteFile: bool = False
+    
     def __post_init__(self) -> None:
         self.rng = np.random.default_rng(42)
         self.sample = Sample(self.fname)
@@ -61,9 +64,63 @@ class H5SingleReader:
         if len(fname) != 1:
             raise ValueError("H5SingleReader should only read a single file")
         self.fname = fname[0]
-        with h5py.File(self.fname) as f:
+        
+        for protocol in supportedProtocols: 
+            if self.fname.startswith(protocol): 
+                # File is stored on a remote server 
+                self.isRemoteFile = True 
+                # Renaming of the file for davs protocol 
+                if protocol == "davs://":
+                    # replace "davs://" by "https://"
+                    # as davs means in pratice https and 
+                    # fsspec knows about https but not davs
+                    self.fname = "https://" + self.fname[len("davs://"):]
+        
+        with getH5File() as f:
             self.groups = self.groups or [g for g in f if isinstance(f[g], h5py.Group)]
             self.dsets = self.dsets or [d for d in f if isinstance(f[d], h5py.Dataset)]
+            
+
+    def getH5File(self) -> h5py.File:
+        # Implement a retry feature as accessing remote remote file 
+        # Also implemented for local file 
+        # as local files might also be subject to transient issues 
+        maxTry = 5
+        nTry = 0 
+        successRead = False
+        
+        while (nTry < maxTry):
+            nTry += 1
+            
+            if nTry > 1:
+                # Previous attempt failed 
+                # Pause for 2 seconds as server might 
+                # have some transient issue
+                time.sleep(2)
+            try:
+                if isRemoteFile: 
+                    # Here using fsspec which allows reading files stored on a remote server
+                    # For now supporting xrootd and davs protocol (in pratice transformed to https) 
+                    with fsspec.open(self.fname, "rb") as f:
+                        hf = h5py.File(f, 'r')
+                else: 
+                    hf = h5py.File(self.fname)
+                
+                # If arriving here means the file could be read successfully 
+                # whether stored locally or on a remote server 
+                return hf
+
+            except Exception as exc:
+                # Keep track of exception 
+                errorMsg = f"{type(exc).__name__}: {exc}"
+            except: 
+                # Catch any other exception 
+                errorMsg = "Unknown exception" 
+
+        # If after the while 
+        # Failed to read file after several tries 
+        # raise error in that case 
+        raise RunTimeError(f"Could not read file={self.fname} with error={errorMsg}")
 
     @cached_property
     def num_jets(self) -> int:
