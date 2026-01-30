@@ -124,11 +124,11 @@ class H5SingleReader:
 
     @cached_property
     def num_jets(self) -> int:
-        with h5py.File(self.fname) as f:
+        with getH5File() as f:
             return len(f[self.jets_name])
 
     def get_attr(self, name, group=None):
-        with h5py.File(self.fname) as f:
+        with getH5File() as f:
             obj = f[group] if group else f
             return obj.attrs[name]
 
@@ -213,7 +213,7 @@ class H5SingleReader:
             variables = {self.jets_name: None}
 
         total = 0
-        with h5py.File(self.fname) as f:
+        with getH5File() as f:
             arrays = {name: self.empty(f[name], var) for name, var in variables.items()}
             data = {name: self.empty(f[name], var) for name, var in variables.items()}
 
@@ -262,7 +262,7 @@ class H5SingleReader:
         """
         if variables is None:
             variables = {self.jets_name: None}
-        h5 = h5py.File(self.fname, "r")
+        h5 = getH5File()
         arrays = {name: self.empty(h5[name], var) for name, var in variables.items()}
         # nonlocal data
         data = {name: self.empty(h5[name], var) for name, var in variables.items()}
@@ -338,6 +338,9 @@ class H5Reader:
 
     def __post_init__(self) -> None:
         self.rng = np.random.default_rng(42)
+        
+        print(type(fname))
+        
         if isinstance(self.fname, str | Path):
             self.fname = [self.fname]
 
