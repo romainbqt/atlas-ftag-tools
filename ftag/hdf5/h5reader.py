@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
+import time 
 import fsspec
 import h5py
 import numpy as np
@@ -65,18 +66,19 @@ class H5SingleReader:
             raise ValueError("H5SingleReader should only read a single file")
         self.fname = fname[0]
         
-        for protocol in self.supportedProtocols: 
-            if self.fname.startswith(protocol): 
-                # File is stored on a remote server 
-                self.isRemoteFile = True 
-                # Renaming of the file for davs protocol 
-                if protocol == "davs://":
-                    # replace "davs://" by "https://"
-                    # as davs means in pratice https and 
-                    # fsspec knows about https but not davs
-                    self.fname = "https://" + self.fname[len("davs://"):]
+        print(self.fname)
+        # for protocol in self.supportedProtocols: 
+        #     if self.fname.startswith(protocol): 
+        #         # File is stored on a remote server 
+        #         self.isRemoteFile = True 
+        #         # Renaming of the file for davs protocol 
+        #         if protocol == "davs://":
+        #             # replace "davs://" by "https://"
+        #             # as davs means in pratice https and 
+        #             # fsspec knows about https but not davs
+        #             self.fname = "https://" + self.fname[len("davs://"):]
         
-        with getH5File() as f:
+        with self.getH5File() as f:
             self.groups = self.groups or [g for g in f if isinstance(f[g], h5py.Group)]
             self.dsets = self.dsets or [d for d in f if isinstance(f[d], h5py.Dataset)]
             
