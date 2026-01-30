@@ -100,7 +100,7 @@ class H5SingleReader:
                 # have some transient issue
                 time.sleep(2)
             try:
-                if isRemoteFile: 
+                if self.isRemoteFile: 
                     # Here using fsspec which allows reading files stored on a remote server
                     # For now supporting xrootd and davs protocol (in pratice transformed to https) 
                     with fsspec.open(self.fname, "rb") as f:
@@ -122,7 +122,7 @@ class H5SingleReader:
         # If after the while 
         # Failed to read file after several tries 
         # raise error in that case 
-        raise RunTimeError(f"Could not read file={self.fname} with error={errorMsg}")
+        raise RuntimeError(f"Could not read file={self.fname} with error={errorMsg}")
 
     @cached_property
     def num_jets(self) -> int:
