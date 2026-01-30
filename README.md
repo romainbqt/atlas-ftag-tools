@@ -24,6 +24,36 @@ To additionally install the development dependencies (for formatting and linting
 pip install atlas-ftag-tools[dev]
 ```
 
+NB: `lsetup xcache` does not setup python module `XRootD` while `lsetup xcache` does. 
+
+```bash
+setupATLAS
+lsetup xrootd
+voms-proxy-init -voms atlas
+```
+or 
+Install xrootd precompiled for upp 
+```bash 
+mamba activate upp 
+mamba install -c conda-forge xrootd
+```
+
+Then 
+```bash
+setupATLAS
+lsetup xcache
+voms-proxy-init -voms atlas
+```
+
+The error otherwise being 
+```
+File "/auto_home/users/rbouquet/miniforge3/envs/upp/lib/python3.11/site-packages/fsspec_xrootd/xrootd.py", line 18, in <module>
+    from XRootD import client
+ModuleNotFoundError: No module named 'XRootD'
+```
+
+
+
 ## Usage
 
 Extensive examples are given in the [Examples](https://umami-hep.github.io/atlas-ftag-tools/main/examples/index.html)
